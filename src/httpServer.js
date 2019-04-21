@@ -7,8 +7,7 @@
 
 const roads = require('../index.js');
 const http = require('http');
-const crypto = require('crypto');
-const fs = require("fs");
+const https = require('https');
 
 /**
  * [exports description]
@@ -21,9 +20,9 @@ module.exports = class Server {
 	 * @todo  tests
 	 * @param {Roads} road The Road that handles all the routes
 	 * @param {Function} error_handler An overwrite to the standard error handler. Accepts a single parameter (the error) and should return a Roads.Response object.
-	 * @param {Object} credentials an object with two values, key (the private key) and cert (the certificate)
+	 * @param {Object} httpsOptions HTTPS servers require additional data. You can pass all of those parameters here. Valid values can be found in the node docs: https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener
 	 */
-	constructor(road, error_handler, credentials) {
+	constructor(road, error_handler, httpsOptions={}) {
 		if (!road) {
 			throw new Error('You must provide your Road when creating a Roads Server');
 		}
@@ -52,11 +51,13 @@ module.exports = class Server {
 			this._custom_error_handler = null;
 		}
 
-		this._server = http.createServer(this._onRequest.bind(this));
+		let serverLib = http;
 
-		if (credentials) {
-			this._server.setSecure(credentials);
+		if (httpsOptions.key && httpsOptions.cert) {
+			serverLib = https;
 		}
+
+		this._server = serverLib.createServer(options, this._onRequest.bind(this));
 	}
 
 	/**
