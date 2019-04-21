@@ -7,6 +7,8 @@
 
 const roads = require('../index.js');
 const http = require('http');
+const crypto = require('crypto');
+const fs = require("fs");
 
 /**
  * [exports description]
@@ -17,10 +19,11 @@ module.exports = class Server {
 	 * Constructs a new Server object that helps create Roads servers.
 	 *
 	 * @todo  tests
-	 * @param  Roads road The Road that handles all the routes
-	 * @param  Function error_handler An overwrite to the standard error handler. Accepts a single parameter (the error) and should return a Roads.Response object.
+	 * @param {Roads} road The Road that handles all the routes
+	 * @param {Function} error_handler An overwrite to the standard error handler. Accepts a single parameter (the error) and should return a Roads.Response object.
+	 * @param {Object} credentials an object with two values, key (the private key) and cert (the certificate)
 	 */
-	constructor(road, error_handler) {
+	constructor(road, error_handler, credentials) {
 		if (!road) {
 			throw new Error('You must provide your Road when creating a Roads Server');
 		}
@@ -49,8 +52,11 @@ module.exports = class Server {
 			this._custom_error_handler = null;
 		}
 
-		// @todo: support HTTPS
 		this._server = http.createServer(this._onRequest.bind(this));
+
+		if (credentials) {
+			this._server.setSecure(credentials);
+		}
 	}
 
 	/**

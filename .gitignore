@@ -1,3 +1,6 @@
+tests/certificate.pem
+tests/privatekey.pem
+
 # Logs
 logs
 *.log
