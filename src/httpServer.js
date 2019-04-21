@@ -57,7 +57,7 @@ module.exports = class Server {
 			serverLib = https;
 		}
 
-		this._server = serverLib.createServer(options, this._onRequest.bind(this));
+		this._server = serverLib.createServer(httpsOptions, this._onRequest.bind(this));
 	}
 
 	/**
