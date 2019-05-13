@@ -1,10 +1,10 @@
 {
   "name": "roads-server",
-  "version": "1.0.0-alpha.4",
+  "version": "1.0.0-alpha.5",
   "author": {
     "name": "Aaron Hedges",
     "email": "aaron@dashron.com",
-    "url": "www.dashron.com"
+    "url": "http://www.dashron.com"
   },
   "description": "A simple web server for the roads framework",
   "homepage": "https://github.com/Dashron/roads-server",
@@ -15,6 +15,9 @@
   "repository": {
     "type": "git",
     "url": "git://github.com/Dashron/roads-server.git"
+  },
+  "dependencies": {
+    "roads": "5.0.0-beta.4"
   },
   "license": "MIT"
 }

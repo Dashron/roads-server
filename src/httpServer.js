@@ -5,7 +5,7 @@
 * MIT Licensed
  */
 
-const roads = require('../index.js');
+const roads = require('roads');
 const http = require('http');
 const https = require('https');
 
@@ -58,6 +58,7 @@ module.exports = class Server {
 		}
 
 		this._server = serverLib.createServer(httpsOptions, this._onRequest.bind(this));
+		this._server.on('error', this._error_handler.bind(this, new roads.Response(500, 'Unknown error')));
 	}
 
 	/**
