@@ -51,13 +51,12 @@ module.exports = class Server {
 			this._custom_error_handler = null;
 		}
 
-		let serverLib = http;
-
 		if (httpsOptions.key && httpsOptions.cert) {
-			serverLib = https;
+			this._server = https.createServer(httpsOptions, this._onRequest.bind(this));
+		} else {
+			this._server = http.createServer(this._onRequest.bind(this));
 		}
 
-		this._server = serverLib.createServer(httpsOptions, this._onRequest.bind(this));
 		this._server.on('error', this._error_handler.bind(this, new roads.Response(500, 'Unknown error')));
 	}
 
