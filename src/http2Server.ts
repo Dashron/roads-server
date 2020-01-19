@@ -1,50 +1,50 @@
 "use strict";
+
 /**
 * http2Server.js
 * Copyright(c) 2018 Aaron Hedges <aaron@dashron.com>
 * MIT Licensed
  */
 
-const http2 = require('http2');
+import http2, { constants, Http2Server, ServerHttp2Stream } from "http2";
+import { Road, Response } from 'roads';
+
 const {
     HTTP2_HEADER_METHOD,
     HTTP2_HEADER_PATH,
     HTTP2_HEADER_STATUS
-} = http2.constants;
+} = constants;
 
 /**
  * [exports description]
  * @type {[type]}
  */
-module.exports = class Server {
+export default class Server {
+	/**
+	 * This is the node.js http2 server from the http2 library.
+	 * @todo  support HTTPS
+	 * @type HTTPServer
+	 */
+	protected server: Http2Server;
+
+	/**
+	 * This is the road object that will handle all requests
+	 * @type {Road}
+	 */
+	protected road: Road;
+
 	/**
 	 * Constructs a new Server object that helps create Roads servers.
 	 *
-	 * @todo  tests
-	 * @param  Roads road The Road that handles all the routes
+	 * @param {Road} road The Road that handles all the routes
 	 */
-	constructor(road) {
-		if (!road) {
-			throw new Error('You must provide your Road when creating a Roads Server');
-		}
-
-		/**
-		 * This is the node.js http2 server from the http2 library.
-		 * @todo  support HTTPS
-		 * @type HTTPServer
-		 */
-		this._server = null;
-
-		/**
-		 * This is the road object that will handle all requests
-		 * @type Road
-		 */
-		this._road = road;
+	constructor(road: Road) {
+		this.road = road;
 
 		// @todo: support HTTPS
-        this._server = http2.createServer();
-        this._server.on('stream', this._onStream.bind(this));
-        this._server.on('error', (error) => {
+        this.server = http2.createServer();
+        this.server.on('stream', this.onStream.bind(this));
+        this.server.on('error', (error) => {
             // todo: allow the implementor to provide this
             console.log('http2 server error', error);
         });
@@ -53,10 +53,10 @@ module.exports = class Server {
 	/**
 	 * Helper function to write a roads Response object to an HTTPResponse object
 	 * 
-	 * @param  HTTPResponse http_response
-	 * @param  Response response
+	 * @param {ServerHttp2Stream} stream
+	 * @param {Response} response
 	 */
-	_sendResponse (stream, response) {
+	protected sendResponse (stream: ServerHttp2Stream, response: Response): void {
         let response_body;
 
 		// wrap up and write the response to the server
@@ -83,11 +83,10 @@ module.exports = class Server {
 	 * Standard logic for turning each request into a road request, and communicating the response
 	 * back to the client
 	 * 
-	 * @param  HTTPRequest http_request
-	 * @param  HTTPResponse http_response
-
+	 * @param {ServerHttp2Stream} stream
+	 * @param {object} headers
 	 */
-	_onStream (stream, headers) {
+	protected onStream (stream: ServerHttp2Stream, headers: {[x: string]: any}): void {
         let body = '';
         let method = headers[HTTP2_HEADER_METHOD];
         let path = headers[HTTP2_HEADER_PATH];
@@ -101,10 +100,10 @@ module.exports = class Server {
 
 		stream.on('end', () => {
 			// execute the api logic and retrieve the appropriate response object
-			this._road.request(method, path, body, headers)
-				.then((response) => {
-                    this._sendResponse(stream, response);
-                }).catch((err) => {
+			this.road.request(method, path, body, headers)
+				.then((response: Response) => {
+                    this.sendResponse(stream, response);
+                }).catch((err: Error) => {
 					console.log('We have encountered an unexpected error within the road assigned to this http2 server');
                     console.log(err.stack);
                     
@@ -116,7 +115,7 @@ module.exports = class Server {
 		});
 
 		// server request errors go to the unknown error representation
-		stream.on('error', (error) => {
+		stream.on('error', (error: Error) => {
             // todo: allow the implementor to provide this
             console.log('http2 server error', error);
         });
@@ -125,10 +124,10 @@ module.exports = class Server {
 	/**
 	 * Start the http server. Accepts the same parameters as HttpServer.listen
 	 * 
-	 * @param int port
-	 * @param string hostname
+	 * @param {number} port
+	 * @param {string} hostname
 	 */
-	listen (port, hostname) {
-		return this._server.listen(port, hostname);
+	listen (port: number, hostname: string) {
+		return this.server.listen(port, hostname);
 	}
 };

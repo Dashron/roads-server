@@ -5,15 +5,39 @@
 * MIT Licensed
  */
 
-const roads = require('roads');
-const http = require('http');
-const https = require('https');
+import { Road, Response } from 'roads';
+import *  as http from 'http';
+import * as https from 'https';
+import { Server as HttpServer, ServerResponse, IncomingMessage } from 'http';
+import { Server as HttpsServer, ServerOptions as HttpsServerOptions } from 'https';
 
 /**
  * [exports description]
  * @type {[type]}
  */
-module.exports = class Server {
+export default class Server {
+
+	/**
+	 * This is the node.js http server from the http library.
+	 * @todo  support HTTPS
+	 * @type HTTPServer
+	 */
+	protected server: HttpServer;
+
+	/**
+	 * This is the road object that will handle all requests
+	 * @type Road
+	 */
+	protected road: Road;
+
+	/**
+	 * If set, this holds the custom error handler defined by the user in the constructor
+	 * 
+	 * @type null|function
+	 */
+
+	 protected custom_error_handler?: Function;
+
 	/**
 	 * Constructs a new Server object that helps create Roads servers.
 	 *
@@ -22,42 +46,20 @@ module.exports = class Server {
 	 * @param {Function} error_handler An overwrite to the standard error handler. Accepts a single parameter (the error) and should return a Roads.Response object.
 	 * @param {Object} httpsOptions HTTPS servers require additional data. You can pass all of those parameters here. Valid values can be found in the node docs: https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener
 	 */
-	constructor(road, error_handler, httpsOptions={}) {
-		if (!road) {
-			throw new Error('You must provide your Road when creating a Roads Server');
-		}
+	constructor(road: Road, error_handler?: Function, httpsOptions?: HttpsServerOptions) {
+		this.road = road;
 
-		/**
-		 * This is the node.js http server from the http library.
-		 * @todo  support HTTPS
-		 * @type HTTPServer
-		 */
-		this._server = null;
-
-		/**
-		 * This is the road object that will handle all requests
-		 * @type Road
-		 */
-		this._road = road;
-
-		/**
-		 * If set, this holds the custom error handler defined by the user in the constructor
-		 * 
-		 * @type null|function
-		 */
 		if (error_handler) {	
-			this._custom_error_handler = error_handler;
-		} else {
-			this._custom_error_handler = null;
+			this.custom_error_handler = error_handler;
 		}
 
-		if (httpsOptions.key && httpsOptions.cert) {
-			this._server = https.createServer(httpsOptions, this._onRequest.bind(this));
+		if (httpsOptions && httpsOptions.key && httpsOptions.cert) {
+			this.server = https.createServer(httpsOptions, this.onRequest.bind(this));
 		} else {
-			this._server = http.createServer(this._onRequest.bind(this));
+			this.server = http.createServer(this.onRequest.bind(this));
 		}
 
-		this._server.on('error', this._error_handler.bind(this, new roads.Response(500, 'Unknown error')));
+		this.server.on('error', this.error_handler.bind(this, new Response('Unknown error', 500)));
 	}
 
 	/**
@@ -72,15 +74,12 @@ module.exports = class Server {
 	 * @param  HTTPResponse http_response
 	 * @param  Error error
 	 */
-	_error_handler (http_response, error) {
-		if (this._custom_error_handler) {
-			return this._sendResponse(http_response, this._custom_error_handler(error));
+	protected error_handler (http_response: ServerResponse, error: Error) {
+		if (this.custom_error_handler) {
+			return this.sendResponse(http_response, this.custom_error_handler(error));
 		}
-
-		if (error instanceof roads.HttpError) {
-			this._sendResponse(http_response, new roads.Response({"error": error.message}, error.code, error.headers));
-		} else {
-			this._sendResponse(http_response, new roads.Response({"error" : "An unknown error has occured"}, 500));
+		else {
+			return this.sendResponse(http_response, new Response(JSON.stringify({"error" : "An unknown error has occured"}), 500));
 		}
 	}
 
@@ -90,7 +89,7 @@ module.exports = class Server {
 	 * @param  HTTPResponse http_response
 	 * @param  Response response
 	 */
-	_sendResponse (http_response, response) {
+	protected sendResponse (http_response: ServerResponse, response: Response) {
 		// wrap up and write the response to the server
 		if (typeof(response.headers['content-type']) !== "string" && typeof(response.body) === "object") {
 			response.headers['content-type'] = 'application/json';
@@ -118,13 +117,13 @@ module.exports = class Server {
 	 * @param  HTTPResponse http_response
 
 	 */
-	_onRequest (http_request, http_response) {
+	protected onRequest (http_request: IncomingMessage, http_response: ServerResponse) {
 		let bodyFound = false;
-		let body = '';
+		let body: string | undefined = '';
 		let _self = this;
 
-		let error_handler = _self._error_handler.bind(_self, http_response);
-		let success_handler = _self._sendResponse.bind(_self, http_response);
+		let error_handler = _self.error_handler.bind(_self, http_response);
+		let success_handler = _self.sendResponse.bind(_self, http_response);
 
 		http_request.on('readable', () => {
 			bodyFound = true;
@@ -133,6 +132,10 @@ module.exports = class Server {
 				body += chunk;
 			}
 		});
+
+		if (!http_request.method) {
+			return _self.sendResponse(http_response, new Response("Invalid HTTP Method", 405));
+		}
 
 		http_request.on('end', () => {
 			// can we get an empty string body separate from "no body sent"? 
@@ -144,12 +147,20 @@ module.exports = class Server {
 			}
 
 			// execute the api logic and retrieve the appropriate response object
-			_self._road.request(http_request.method, http_request.url, body, http_request.headers)
-				.then(success_handler).catch(error_handler).catch((err) => {
+			_self.road.request(http_request.method ? http_request.method : '', http_request.url  ? http_request.url : '', body, http_request.headers)
+				.then(success_handler)
+				.catch(error_handler)
+				.catch((err: Error) => {
 					console.log('An error has been encountered in the roads HTTP Server error handler');
 					console.log(err.stack);
 					// If the error handler throws errors, raise a 500
-					_self._writeToResponse(http_response, new roads.Response({"error" : "An unknown error has occured"}, 500));
+					_self.sendResponse(http_response, new Response(JSON.stringify({"error" : "An unknown error has occured"}), 500));
+				})
+				.catch((err: Error) => {
+					console.log('A serious error has occurred in the roads HTTP Server error handler');
+					console.log('We were unable to send a response to notify the end user');
+					http_response.writeHead(500);
+					http_response.end();
 				});
 		});
 
@@ -163,7 +174,7 @@ module.exports = class Server {
 	 * @param int port
 	 * @param string hostname
 	 */
-	listen (port, hostname) {
-		return this._server.listen(port, hostname);
+	listen (port: number, hostname: string) {
+		this.server.listen(port, hostname);
 	}
 };

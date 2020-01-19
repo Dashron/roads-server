@@ -1,6 +1,6 @@
 {
   "name": "roads-server",
-  "version": "1.0.0-alpha.6",
+  "version": "1.0.0",
   "author": {
     "name": "Aaron Hedges",
     "email": "aaron@dashron.com",
@@ -17,7 +17,9 @@
     "url": "git://github.com/Dashron/roads-server.git"
   },
   "dependencies": {
-    "roads": "5.0.0-beta.4"
+    "@types/node": "^12.12.14",
+    "roads": "6.0.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "types": "./types/index.d.ts"
 }
