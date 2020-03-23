@@ -59,7 +59,10 @@ export default class Server {
 			this.server = http.createServer(this.onRequest.bind(this));
 		}
 
-		this.server.on('error', this.error_handler.bind(this, new Response('Unknown error', 500)));
+		// todo: how does this and the callback work with server creation errors (e.g. enoent or addrinuse)? can we make this a better user experience?
+		this.server.on('error', (error: Error) => {
+			console.log('Server error:', error);
+		});
 	}
 
 	/**
@@ -169,12 +172,12 @@ export default class Server {
 	}
 
 	/**
-	 * Start the http server. Accepts the same parameters as HttpServer.listen
+	 * Start the http server.
 	 * 
 	 * @param int port
-	 * @param string hostname
+	 * @param string host
 	 */
-	listen (port: number, hostname: string) {
-		this.server.listen(port, hostname);
+	listen (port: number, host: string, callback?: (error?: Error) => void) {
+		this.server.listen(port, host, callback);
 	}
 };

@@ -68,10 +68,10 @@ export default class Server {
      */
     protected onRequest(http_request: IncomingMessage, http_response: ServerResponse): void;
     /**
-     * Start the http server. Accepts the same parameters as HttpServer.listen
+     * Start the http server.
      *
      * @param int port
-     * @param string hostname
+     * @param string host
      */
-    listen(port: number, hostname: string): void;
+    listen(port: number, host: string, callback?: (error?: Error) => void): void;
 }
