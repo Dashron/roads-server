@@ -1,9 +1,9 @@
-/// <reference types="node" />
 /**
-* httpServer.js
-* Copyright(c) 2018 Aaron Hedges <aaron@dashron.com>
+* httpServer.ts
+* Copyright(c) 2021 Aaron Hedges <aaron@dashron.com>
 * MIT Licensed
  */
+/// <reference types="node" />
 import { Road, Response } from 'roads';
 import { Server as HttpServer, ServerResponse, IncomingMessage } from 'http';
 import { ServerOptions as HttpsServerOptions } from 'https';

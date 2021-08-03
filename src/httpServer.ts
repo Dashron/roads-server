@@ -1,7 +1,6 @@
-"use strict";
 /**
-* httpServer.js
-* Copyright(c) 2018 Aaron Hedges <aaron@dashron.com>
+* httpServer.ts
+* Copyright(c) 2021 Aaron Hedges <aaron@dashron.com>
 * MIT Licensed
  */
 
@@ -32,7 +31,7 @@ export default class Server {
 
 	/**
 	 * If set, this holds the custom error handler defined by the user in the constructor
-	 * 
+	 *
 	 * @type null|function
 	 */
 
@@ -49,7 +48,7 @@ export default class Server {
 	constructor(road: Road, error_handler?: Function, httpsOptions?: HttpsServerOptions) {
 		this.road = road;
 
-		if (error_handler) {	
+		if (error_handler) {
 			this.custom_error_handler = error_handler;
 		}
 
@@ -73,7 +72,7 @@ export default class Server {
 	 * The roads default logic is
 	 *  - If the error is a roads.HttpError, display the error message and status code exactly as thrown.
 	 *  - If the error is anything else, display a 500 error with the message "Server Error: ".
-	 * 
+	 *
 	 * @param  HTTPResponse http_response
 	 * @param  Error error
 	 */
@@ -88,7 +87,7 @@ export default class Server {
 
 	/**
 	 * Helper function to write a roads Response object to an HTTPResponse object
-	 * 
+	 *
 	 * @param  HTTPResponse http_response
 	 * @param  Response response
 	 */
@@ -99,10 +98,10 @@ export default class Server {
 		}
 
 		http_response.writeHead(response.status, response.headers);
-		
+
 		if (response.body === null) {
 			return;
-		}	
+		}
 		else if (typeof(response.body) === "object") {
 			http_response.write(JSON.stringify(response.body));
 		} else if (response.body !== undefined) {
@@ -115,7 +114,7 @@ export default class Server {
 	/**
 	 * Standard logic for turning each request into a road request, and communicating the response
 	 * back to the client
-	 * 
+	 *
 	 * @param  HTTPRequest http_request
 	 * @param  HTTPResponse http_response
 
@@ -141,7 +140,7 @@ export default class Server {
 		}
 
 		http_request.on('end', () => {
-			// can we get an empty string body separate from "no body sent"? 
+			// can we get an empty string body separate from "no body sent"?
 			// todo: find out. In the meanwhile, this will handle that case and use undefined
 			// for no body ever sent
 			// todo: unit test
@@ -173,7 +172,7 @@ export default class Server {
 
 	/**
 	 * Start the http server.
-	 * 
+	 *
 	 * @param int port
 	 * @param string host
 	 */

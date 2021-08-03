@@ -52,7 +52,7 @@ export default class Server {
 
 	/**
 	 * Helper function to write a roads Response object to an HTTPResponse object
-	 * 
+	 *
 	 * @param {ServerHttp2Stream} stream
 	 * @param {Response} response
 	 */
@@ -64,12 +64,12 @@ export default class Server {
 			response.headers['content-type'] = 'application/json';
 		}
 
-        response.headers[HTTP2_HEADER_STATUS] = response.status;
+        response.headers[HTTP2_HEADER_STATUS] = String(response.status);
         stream.respond(response.headers);
-		
+
 		if (response.body === null) {
             response_body = undefined;
-		}	
+		}
 		else if (typeof(response.body) === "object") {
             response_body = JSON.stringify(response.body);
 		} else if (response.body !== undefined) {
@@ -82,7 +82,7 @@ export default class Server {
 	/**
 	 * Standard logic for turning each request into a road request, and communicating the response
 	 * back to the client
-	 * 
+	 *
 	 * @param {ServerHttp2Stream} stream
 	 * @param {object} headers
 	 */
@@ -106,7 +106,7 @@ export default class Server {
                 }).catch((err: Error) => {
 					console.log('We have encountered an unexpected error within the road assigned to this http2 server');
                     console.log(err.stack);
-                    
+
                     stream.respond({
                         [HTTP2_HEADER_STATUS]: 500
                     });
@@ -123,7 +123,7 @@ export default class Server {
 
 	/**
 	 * Start the http server. Accepts the same parameters as HttpServer.listen
-	 * 
+	 *
 	 * @param {number} port
 	 * @param {string} hostname
 	 */
