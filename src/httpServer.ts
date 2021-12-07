@@ -102,7 +102,7 @@ export default class Server {
 		if (response.body === null) {
 			return;
 		}
-		else if (typeof(response.body) === "object") {
+		else if (typeof(response.body) === "object" && !(response.body instanceof Buffer)) {
 			http_response.write(JSON.stringify(response.body));
 		} else if (response.body !== undefined) {
 			http_response.write(response.body);

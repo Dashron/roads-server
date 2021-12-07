@@ -1,6 +1,6 @@
 {
   "name": "roads-server",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "author": {
     "name": "Aaron Hedges",
     "email": "aaron@dashron.com",
@@ -12,12 +12,16 @@
     "url": "http://github.com/Dashron/roads-server/issues",
     "email": "aaron@dashron.com"
   },
+  "scripts": {
+    "build": "tsc",
+    "prepack": "tsc"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/Dashron/roads-server.git"
   },
   "devDependencies": {
-    "@types/node": "^12.12.14",
+    "@types/node": "^16.4.0",
 	"roads": "7.X.X"
   },
   "license": "MIT",
