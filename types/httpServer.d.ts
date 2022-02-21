@@ -6,7 +6,14 @@
 /// <reference types="node" />
 import { Road, Response } from 'roads';
 import { Server as HttpServer, ServerResponse, IncomingMessage } from 'http';
-import { ServerOptions as HttpsServerOptions } from 'https';
+import { Server as HttpsServer, ServerOptions as HttpsServerOptions } from 'https';
+interface RoadsServerOptions {
+    https?: {
+        enabled: boolean;
+        options: HttpsServerOptions;
+    };
+    maxRequestBodySize?: number;
+}
 /**
  * [exports description]
  * @type {[type]}
@@ -17,7 +24,7 @@ export default class Server {
      * @todo  support HTTPS
      * @type HTTPServer
      */
-    protected server: HttpServer;
+    protected server: HttpServer | HttpsServer;
     /**
      * This is the road object that will handle all requests
      * @type Road
@@ -30,6 +37,10 @@ export default class Server {
      */
     protected custom_error_handler?: Function;
     /**
+     * The maximum sizze we should allow for any incoming request body. We will stop reading incoming data at this point.
+     */
+    protected maxRequestBodySize: number;
+    /**
      * Constructs a new Server object that helps create Roads servers.
      *
      * @todo  tests
@@ -37,7 +48,7 @@ export default class Server {
      * @param {Function} error_handler An overwrite to the standard error handler. Accepts a single parameter (the error) and should return a Roads.Response object.
      * @param {Object} httpsOptions HTTPS servers require additional data. You can pass all of those parameters here. Valid values can be found in the node docs: https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener
      */
-    constructor(road: Road, error_handler?: Function, httpsOptions?: HttpsServerOptions);
+    constructor(road: Road, error_handler?: Function, options?: RoadsServerOptions);
     /**
      * Standard logic to handle any errors thrown in the roads request.
      * If a custom error handler was provided in the constructor, it will use that. Otherwise
@@ -75,3 +86,4 @@ export default class Server {
      */
     listen(port: number, host: string, callback?: (error?: Error) => void): void;
 }
+export {};

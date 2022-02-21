@@ -10,6 +10,14 @@ import * as https from 'https';
 import { Server as HttpServer, ServerResponse, IncomingMessage } from 'http';
 import { Server as HttpsServer, ServerOptions as HttpsServerOptions } from 'https';
 
+interface RoadsServerOptions {
+	https?:  {
+		enabled: boolean,
+		options: HttpsServerOptions
+	},
+	maxRequestBodySize?: number
+}
+
 /**
  * [exports description]
  * @type {[type]}
@@ -21,7 +29,7 @@ export default class Server {
 	 * @todo  support HTTPS
 	 * @type HTTPServer
 	 */
-	protected server: HttpServer;
+	protected server: HttpServer | HttpsServer;
 
 	/**
 	 * This is the road object that will handle all requests
@@ -35,7 +43,12 @@ export default class Server {
 	 * @type null|function
 	 */
 
-	 protected custom_error_handler?: Function;
+	protected custom_error_handler?: Function;
+
+	/**
+	 * The maximum sizze we should allow for any incoming request body. We will stop reading incoming data at this point.
+	 */
+	protected maxRequestBodySize = 1048576;
 
 	/**
 	 * Constructs a new Server object that helps create Roads servers.
@@ -45,17 +58,21 @@ export default class Server {
 	 * @param {Function} error_handler An overwrite to the standard error handler. Accepts a single parameter (the error) and should return a Roads.Response object.
 	 * @param {Object} httpsOptions HTTPS servers require additional data. You can pass all of those parameters here. Valid values can be found in the node docs: https://nodejs.org/api/https.html#https_https_createserver_options_requestlistener
 	 */
-	constructor(road: Road, error_handler?: Function, httpsOptions?: HttpsServerOptions) {
+	constructor(road: Road, error_handler?: Function, options?: RoadsServerOptions) {
 		this.road = road;
 
 		if (error_handler) {
 			this.custom_error_handler = error_handler;
 		}
 
-		if (httpsOptions && httpsOptions.key && httpsOptions.cert) {
-			this.server = https.createServer(httpsOptions, this.onRequest.bind(this));
+		if (options?.https?.enabled) {
+			this.server = https.createServer(options.https.options, this.onRequest.bind(this));
 		} else {
 			this.server = http.createServer(this.onRequest.bind(this));
+		}
+
+		if (options?.maxRequestBodySize) {
+			this.maxRequestBodySize = options.maxRequestBodySize;
 		}
 
 		// todo: how does this and the callback work with server creation errors (e.g. enoent or addrinuse)? can we make this a better user experience?
@@ -127,11 +144,27 @@ export default class Server {
 		let error_handler = _self.error_handler.bind(_self, http_response);
 		let success_handler = _self.sendResponse.bind(_self, http_response);
 
+		// TODO: Handle max request body size here.
+		if (http_request.headers['content-length']) {
+			const contentLength = Number(http_request.headers['content-length']);
+			if (contentLength > this.maxRequestBodySize) {
+				http_response.writeHead(413);
+				http_response.end();
+				return;
+			}
+		}
+
 		http_request.on('readable', () => {
 			bodyFound = true;
 	  		let chunk = null;
 			while (null !== (chunk = http_request.read())) {
 				body += chunk;
+				if (http_request.socket.bytesRead > this.maxRequestBodySize) {
+					http_response.writeHead(413);
+					http_response.end();
+					http_request.removeAllListeners();
+					break;
+				}
 			}
 		});
 
