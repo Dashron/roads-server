@@ -1,6 +1,6 @@
 {
   "name": "roads-server",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "author": {
     "name": "Aaron Hedges",
     "email": "aaron@dashron.com",
@@ -25,5 +25,10 @@
 	"roads": "7.X.X"
   },
   "license": "MIT",
-  "types": "./types/index.d.ts"
+  "main": "dist/index.js",
+  "types": "./types/index.d.ts",
+  "files": [
+    "dist",
+    "types"
+  ]
 }
